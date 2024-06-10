@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: mysql
-        image: mynk00211/plivosql:0.0
+        image: mynk00211/plivosql:latest
         ports:
         - containerPort: 3306
           name: mysql

@@ -1,0 +1,74 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_REGISTRY = "index.docker.io"
+        DOCKER_REPO = "mynk00211/messageservice"
+        DOCKER_IMAGE_TAG = "latest"
+        K8S_NAMESPACE = "default"
+        K8S_DEPLOYMENT = "messanger"
+        DOCKER_USERNAME = "mynk00211"
+        
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Checking out source code...'
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[url: 'https://github.com/Mynk0211/plivo.git']]
+                ])
+            }
+        }
+
+        stage('Build') {
+            steps {
+                script {
+                    echo 'Building Docker image...'
+                    sh 'docker build -t ${DOCKER_REPO}:${DOCKER_IMAGE_TAG} .'
+                }
+            }
+        }
+
+        stage('Push Image') {
+            steps {
+                script {
+                    echo 'Pushing Docker image to Docker Hub...'
+                    sh 'docker login -u $DOCKER_USERNAME -p <password>'
+                    sh 'docker tag ${DOCKER_REPO}:${DOCKER_IMAGE_TAG} ${DOCKER_REPO}:${DOCKER_IMAGE_TAG}'
+                    sh 'docker push ${DOCKER_REPO}:${DOCKER_IMAGE_TAG}'
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    echo 'Deploying to Kubernetes...'
+                    sh '''
+                    kubectl set image deployment/${K8S_DEPLOYMENT} ${K8S_DEPLOYMENT}=${DOCKER_REPO}:${DOCKER_IMAGE_TAG} -n ${K8S_NAMESPACE}
+                    kubectl rollout status deployment/${K8S_DEPLOYMENT} -n ${K8S_NAMESPACE}
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                echo 'Cleaning up...'
+                sh 'docker system prune -f'
+            }
+        }
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
+    }
+}
+

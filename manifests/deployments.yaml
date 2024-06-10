@@ -21,7 +21,7 @@ spec:
     spec:
       containers:
       - name: messanger
-        image: mynk00211/messageservice:0.1
+        image: mynk00211/messageservice:0.3
         ports:
         - containerPort: 8000
         env:
