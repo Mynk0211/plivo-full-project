@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: messanger
+  labels:
+    app: messanger
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: messanger
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: messanger
+    spec:
+      containers:
+      - name: messanger
+        image: mynk00211/messageservice:0.1
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DJANGO_ALLOWED_HOSTS
+          value: "*"
+        - name: MYSQL_CLIENT_ADDRESS
+          value: "mysql.default.svc.cluster.local:3306"  # Update with your MySQL service DNS
+        - name: MYSQL_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: username
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: password
+
